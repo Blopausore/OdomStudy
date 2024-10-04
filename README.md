@@ -9,6 +9,115 @@ This folder contains a lot of script that help manipulate rosbag files.
 You can extract the doc for them with `python3 scripts/script_name.py --help`.
 
 
+### Get first time
+This script checks the first message timestamp in a rosbag file. If the timestamp is zero, it checks the first non-zero message and prints it if it exceeds a specified threshold. Otherwise, it returns zero.
+
+Usage:
+```bash
+get_first_time.py <input_file> [--time_threshold <time_threshold>]
+```
+
+Arguments:
+- `input_file`: The input rosbag file
+
+Options:
+- `-h, --help`: Display this help message
+- `--time_threshold <time_threshold>`: The time threshold to consider the origin of the first message [default: 1] seconds
+- `-v, --verbose`: Print more information
+
+### Merge
+This script merges multiple rosbag files into a single rosbag file.
+
+Usage:
+```bash
+merge.py [ROSBAG1, ROSBAG2, ...] -o <output>
+```
+
+Arguments:
+- `ROBAG1, ROBAG2, ...`: The input rosbag files
+
+Options:
+- `-h, --help`: Display this help message
+- `-v, --verbose`: Print more information
+- `-o, --output <output>`: The output rosbag file [default: output.bag]
+- `--time_setter`: Set the time to zero for the first message
+
+
+### Zero time setter
+This script adjusts the timestamps of each message in a rosbag. For each topic, it will set the first message timestamp to the rosbag timestamp and adjust the rest of the messages accordingly. WARNING: This transformation reduces the correlation between the messages timestamps because it makes the supposition that the first message is emitted at the rosbag timestamp, which is false but is an approximation.
+
+Usage:
+```bash
+python rosbag_zero_time_setter.py <input_bag> [<output_bag>]
+```
+
+Arguments:
+- `input_bag`: The input bag file
+- `output_bag`: The output bag file [default: input_bag.zero_time.bag]
+
+Optional Arguments:
+- `-h, --help`: Show this help message and exit
+- `-v, --verbose`: Show the debug messages
+- `--shift_method`: The method to shift the timestamps [default: gross_time_setter] [options: gross_time_setter, setter_on_rosbag_timeline, idiotic_setter_on_rosbag_timeline]
+
+Shift methods:
+- `gross_time_setter`: Set the first message timestamp to zero and adjust the rest of the messages accordingly
+- `setter_on_rosbag_timeline`: Set the first message timestamp to the rosbag timestamp and adjust the rest of the messages accordingly, but also shift the rosbag timeline to the first message timestamp
+- `idiotic_setter_on_rosbag_timeline`: Set the first message timestamp to the rosbag timestamp and adjust the rest of the messages accordingly, but also set the rosbag timeline to the first message timestamp
+
+### Display
+This script displays the content of a rosbag file. You can specify which topics to display and whether to pause after each message.
+
+Usage:
+```bash
+display.py <input_file> [-p] [-t <topic1, topic2, ...>]
+```
+
+Arguments:
+- `input_file`: The input rosbag file
+
+Options:
+- `-h, --help`: Display this help message
+- `-v, --verbose`: Print more information
+- `-p, --pause`: Pause after each message
+- `-t, --topics <topic1> <topic2> ...`: The topics to display [default: all]
+
+### Crop useless msg
+This script removes useless messages from a rosbag file. It will remove the messages that have the same content as the previous message.
+
+Usage:
+```bash
+python crop_useless_msg.py <input_bag> [<output_bag>]
+```
+
+Arguments:
+- `input_bag`: The input bag file
+- `output_bag`: The output bag file [default: input_bag.cropped.bag]
+
+Optional Arguments:
+- `-h, --help`: Show this help message and exit
+- `-v, --verbose`: Show the debug messages
+### TMP Folder
+In this folder, you can find some scripts that are not usually used but can be useful in some cases.
+#### Converter SBGNav to Pose
+This script converts the SBG EKF Nav message to a PoseWithCovarianceStamped message.
+
+Usage:
+```bash
+python converter_sbgnav2pose.py <input_bag> <output_bag>
+```
+
+Arguments:
+- `input_bag`: The input bag file containing the SBG EKF Nav messages
+- `output_bag`: The output bag file containing the PoseWithCovarianceStamped messages
+
+Options:
+- `-h, --help`: Show this help message and exit
+- `-v, --verbose`: Show the debug messages
+- `-p, --pub_name <name>`: The name of the topic to publish [default: /sbg/pose_cov]
+- `-s, --sub_name <name>`: The name of the topic to subscribe [default: /sbg/ekf_nav]
+
+
 ## Encountered problems
 
 

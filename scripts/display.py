@@ -2,7 +2,7 @@ __doc__ = """
 Display a rosbag file content
 
 Usage:
-    rosbag_display.py <input_file> [-p] [-t <topic1, topic2, ...>]
+    display.py <input_file> [-p] [-t <topic1, topic2, ...>]
 
 Arguments:
     input_file: The input rosbag file
@@ -11,7 +11,7 @@ Options:
     -h, --help: Display this help message
     -v, --verbose: Print more information
     -p, --pause: Pause after each message
-    -t, --topics <topic>: The topic to display [default: all]
+    -t, --topics <topic1> <topic2> ... : The topic to display [default: all]
 """
 
 import rosbag

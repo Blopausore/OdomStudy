@@ -15,6 +15,12 @@ Optional Arguments:
     -h, --help: Show this help message and exit
     -v, --verbose: Show the debug messages
     --shift_method: The method to shift the timestamps [default: gross_time_setter] [options: gross_time_setter, setter_on_rosbag_timeline, idiotic_setter_on_rosbag_timeline]
+
+Shift methods:
+    - gross_time_setter: Set the first message timestamp to zero adjust the rest of the messages accordingly
+    - setter_on_rosbag_timeline: Set the first message timestamp to the rosbag timestamp and adjust the rest of the messages accordingly, but also shift the rosbag timeline to the first message timestamp
+    - idiotic_setter_on_rosbag_timeline: Set the first message timestamp to the rosbag timestamp and adjust the rest of the messages accordingly, but also set the rosbag timeline to the first message timestamp
+
 """
 
 import sys

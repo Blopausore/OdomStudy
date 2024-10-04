@@ -1,10 +1,10 @@
 __doc__ = """Merge multiple rosbags into a single rosbag file
 
 Usage:
-    python rosbag_fuse.py [ROBAG1, ROBAG2, ...] 
+    python merge.py [ROBAG1, ROBAG2, ...] 
 
 Arguments:
-    ROBAG1, ROBAG2, ...: The input rosbag files
+    ROSBAG1, ROSBAG2, ...: The input rosbag files
     OUTPUT_ROSBAG: The output rosbag file
 
 Options:
