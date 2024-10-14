@@ -4,7 +4,7 @@ If the timestamp is zero, check the first message that is not zero and print it 
 Otherwise, return zero.
 
 Usage:
-    rosbag_check_first_time.py <input_file> [--time_threshold <time_threshold>]
+    get_first_time.py <input_file> [--time_threshold <time_threshold>]
 
 Arguments:
     input_file: The input rosbag file

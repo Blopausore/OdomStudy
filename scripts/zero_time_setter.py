@@ -20,14 +20,14 @@ Shift methods:
     - gross_time_setter: Set the first message timestamp to zero adjust the rest of the messages accordingly
     - setter_on_rosbag_timeline: Set the first message timestamp to the rosbag timestamp and adjust the rest of the messages accordingly, but also shift the rosbag timeline to the first message timestamp
     - idiotic_setter_on_rosbag_timeline: Set the first message timestamp to the rosbag timestamp and adjust the rest of the messages accordingly, but also set the rosbag timeline to the first message timestamp
-
+    - setter_on_rosbag_clock : Set the first message timestamp to the rosbag timestamp and adjust the rest of the messages accordingly, but also set the rosbag clock to the first message timestamp
 """
 
 import sys
 import os
 import rosbag
 from rospy.rostime import Duration
-
+import rospy
 
 if '-h' in sys.argv or '--help' in sys.argv:
     print(__doc__)
@@ -66,7 +66,7 @@ if verbose:
 shift_method = 'gross_time_setter'
 if '--shift_method' in sys.argv:
     shift_method = sys.argv[sys.argv.index('--shift_method') + 1]
-    if shift_method not in ['gross_time_setter', 'setter_on_rosbag_timeline', 'idiotic_setter_on_rosbag_timeline']:
+    if shift_method not in ['gross_time_setter', 'setter_on_rosbag_timeline', 'idiotic_setter_on_rosbag_timeline', 'setter_on_rosbag_clock']:
         print(f"[ERROR] Unknown shift method: {shift_method}")
         sys.exit(1)
 
@@ -80,8 +80,9 @@ def gross_time_setter():
         for topic, msg, t in inbag.read_messages():
             if topic not in topic_offset:
                 topic_offset[topic] = msg.header.stamp.to_sec()
-            elif abs(msg.header.stamp.to_sec() - topic_offset[topic]) > simulation_duration:
+            elif abs(msg.header.stamp.to_sec() - topic_offset[topic]) > simulation_duration*10:
                 print(f"[WARNING] Topic {topic} has a timestamp offset greater than the simulation duration, so we change the offset")
+                print(f"[WARNING]  -- {msg.header.stamp.to_sec()} - {topic_offset[topic]} = {msg.header.stamp.to_sec() - topic_offset[topic]}")
                 topic_offset[topic] = msg.header.stamp.to_sec()
     
     if verbose:
@@ -92,9 +93,9 @@ def gross_time_setter():
     with rosbag.Bag(output_bag, 'w') as outbag, rosbag.Bag(input_bag, 'r') as inbag:
         simulation_duration = inbag.get_end_time() - inbag.get_start_time()
         for topic, msg, t in inbag.read_messages():
-            if msg.header.stamp.to_sec() - topic_offset[topic] > simulation_duration:
+            if msg.header.stamp.to_sec() - topic_offset[topic] > simulation_duration*10:
                 print(f"[ERROR] Topic {topic} has a timestamp offset greater than the simulation duration, so we skip the message")
-                raise Exception(f"Topic {topic} has a timestamp offset greater than the simulation duration")
+                raise Exception("Topic {topic} has a timestamp offset greater than the simulation duration".format(topic))
             d = Duration(max(msg.header.stamp.to_sec() - topic_offset[topic], 0.0))
             msg.header.stamp.secs = d.secs
             msg.header.stamp.nsecs = d.nsecs
@@ -154,10 +155,44 @@ def idiotic_setter_on_rosbag_timeline():
             msg.header.stamp.nsecs = t.nsecs
             outbag.write(topic, msg, t)
 
+def setter_on_rosbag_clock():
+    if verbose: print(f"[INFO] Setter on rosbag clock : {input_bag} -> {output_bag}")
+    rospy.init_node('zero_time_setter')
+    offset_treshold = 100 # seconds, if the offset is different of 1 from one tf to another, it will create a new tf with the offset
+    timelines = {} # {offset : current_time}
+    if verbose: print(f"[INFO] Setter on rosbag clock : initializing done")
+    with rosbag.Bag(output_bag, 'w') as outbag, rosbag.Bag(input_bag, 'r') as inbag:
+        for topic, msg, t in inbag.read_messages():
+            if verbose: print(f"[INFO] Setter on rosbag clock : processing {topic}", end='\r')
+            if hasattr(msg, 'header') and hasattr(msg.header, 'stamp'):
+                is_set = False
+                for offset, current_time in timelines.items():
+                    if abs(msg.header.stamp.to_sec() - current_time) < offset_treshold:
+                        new_msg = msg
+                        new_msg.header.stamp = rospy.Time.from_sec(msg.header.stamp.to_sec() + offset)
+                        outbag.write(topic, new_msg, t)
+                        timelines[offset] = msg.header.stamp.to_sec()
+                        is_set = True
+                        break
+                if not is_set:
+                    offset = rospy.Time.now().to_sec() - msg.header.stamp.to_sec()
+                    timelines[offset] = msg.header.stamp.to_sec()
+                    new_msg = msg
+                    new_msg.header.stamp = rospy.Time.from_sec(msg.header.stamp.to_sec() + offset)
+                    outbag.write(topic, new_msg, t)
+            else:
+                outbag.write(topic, msg, t)
+
+        
+
+
+
+
 shift_methods = {
     'gross_time_setter': gross_time_setter,
     'setter_on_rosbag_timeline': setter_on_rosbag_timeline,
-    'idiotic_setter_on_rosbag_timeline': idiotic_setter_on_rosbag_timeline
+    'idiotic_setter_on_rosbag_timeline': idiotic_setter_on_rosbag_timeline,
+    'setter_on_rosbag_clock': setter_on_rosbag_clock
 }
 
 if __name__ == '__main__':

@@ -194,6 +194,76 @@ Much more easier than my precedents idea ...
 evo_traj bag --plot data/rosbags/zed_gps_pose.bag /zed2i/zed_node/pose_with_covariance --ref /gps/pose_cova --plot --t_offset 50816852  --align
 ```
 
+###### Publish a new topic
+
+### ZED2i and OrbSlam3
+
+#### Problem
+Using OrbSlam3 with ZED2i seems to work find at first sight, without IMU and considering only one camera, OrbSlam3 give a good estimation of the position of the robot.
+But the configuration for adding the IMU is not well documented and without it, the result is catastrophic.
+We have to find adequate parameters for the IMU and more importantly, we have to find the transformation between the IMU and the camera.
+
+#### Solution
+Inspired by [this post](...) I calculate by hand the transformation between the two topics.
+##### Step 1 : Get the transformation between the two frames
+Play the rosbag then get the transformation between the two frames with the following command :
+```bash
+rostopic echo -n 10 /tf_static
+```
+Warning : in the post this command was recommended `rosrun tf tf_echo /zed2i_left_camera_frame /zed2i_imu_link` but it didn't work for me because the timestamps were too different.
+And so we obtain two transformations :
+
+```json
+transforms: 
+  - 
+    header: 
+      seq: 0
+      stamp: 
+        secs: 1662631361
+        nsecs: 562939136
+      frame_id: "zed2i_left_camera_frame"
+    child_frame_id: "zed2i_imu_link"
+    transform: 
+      translation: 
+        x: -0.0020000000949949026
+        y: -0.023061001673340797
+        z: 0.00021700002253055573
+      rotation: 
+        x: -0.00047277630073949695
+        y: -0.0011897942749783397
+        z: 0.00027295752079226077
+        w: 0.9999991059303284
+
+
+    header: 
+      seq: 0
+      stamp: 
+        secs: 1662631355
+        nsecs:  64525248
+      frame_id: "zed2i_left_camera_frame"
+    child_frame_id: "zed2i_left_camera_optical_frame"
+    transform: 
+      translation: 
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      rotation: 
+        x: 0.5
+        y: -0.4999999999999999
+        z: 0.5
+        w: -0.5000000000000001
+```
+we have to fuse those two transformations to get the transformation between the two frames that we want.
+
+##### Step 2 : Calculate the transformation between the two frames
+In the script `scripts/tmp/orbslam_parameter.py` we try compute the parameters needed for the IMU in the configuration file of OrbSlam3.
+
+In it we compute Tbc = Tbo * Toc with Tbo the transformation between the IMU and the camera and Toc the transformation between the camera and the optical frame using Tbo = Tob^-1.
+
+But are results are not good, we have to find another way to compute the transformation between the two frames.
+
+
+
 ## References
 
 [1]: <https://github.com/MichaelGrupp/evo> "evo github"

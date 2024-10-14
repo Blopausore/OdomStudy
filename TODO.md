@@ -4,7 +4,7 @@
 
 
 ### OrbSlam3
-- [ ] Complete the installation
+- [|] Complete the installation
 - [ ] Record a rosbag
 - [ ] Formatting it to be used with evo
 
